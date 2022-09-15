@@ -3,13 +3,12 @@ This Project is to to perform a Covid 19 Data Exploration
 Skills used: Basics SQL queries, Joins, CTE's, Temp Tables, Windows Functions, Aggregate Functions, Creating Views, Converting Data Types
 */
 use PortfolioProject
-
 -- Select all data from the table CovidDeaths to have a general idea of the dataset
 
 Select *
 From PortfolioProject..CovidDeaths
 
-
+drop table PortfolioProject..CovidDeaths
 
 -- Select all Data where the continent is not NULL
 
@@ -31,9 +30,9 @@ order by 1,2
 -- Let's see  Total Cases vs Total Deaths
 -- Shows likelihood of dying if you contract covid in your country
 
-Select Location, date, total_cases,total_deaths, (total_deaths/total_cases)*100 as DeathPercentage
+Select Location, date, total_cases,total_deaths, (CONVERT(float,total_deaths)/(CONVERT(float,total_cases))*100) as DeathPercentage
 From PortfolioProject..CovidDeaths
-Where location like '%states%'
+Where Location like '%marino%'
 and continent is not null 
 order by 1,2
 
@@ -41,15 +40,16 @@ order by 1,2
 -- Total Cases vs Population
 -- Shows what percentage of population infected with Covid
 
-Select Location, date, Population, total_cases,  (total_cases/population)*100 as PercentPopulationInfected
+Select Location, date, Population, total_cases, ((CONVERT(float,total_cases))/(CONVERT(float,Population))*100) as PercentPopulationInfected
 From PortfolioProject..CovidDeaths
 --Where location like '%states%'
 order by 1,2
 
 
+
 -- Countries with Highest Infection Rate compared to Population
 
-Select Location, Population, MAX(total_cases) as HighestInfectionCount,  Max((total_cases/population))*100 as PercentPopulationInfected
+Select Location, Population, MAX(total_cases) as HighestInfectionCount,  Max((CONVERT(float,total_cases))/(CONVERT(float,population))*100) as PercentPopulationInfected
 From PortfolioProject..CovidDeaths
 --Where location like '%states%'
 Group by Location, Population
@@ -82,7 +82,7 @@ order by TotalDeathCount desc
 
 -- GLOBAL NUMBERS
 
-Select SUM(new_cases) as total_cases, SUM(cast(new_deaths as int)) as total_deaths, SUM(cast(new_deaths as int))/SUM(New_Cases)*100 as DeathPercentage
+Select SUM(cast(new_cases as float)) as total_cases, SUM(cast(new_deaths as float)) as total_deaths, SUM(cast(new_deaths as float))/SUM(cast(New_Cases as float))*100 as DeathPercentage
 From PortfolioProject..CovidDeaths
 --Where location like '%states%'
 where continent is not null 
@@ -104,6 +104,8 @@ Join PortfolioProject..CovidVaccinations vac
 where dea.continent is not null 
 order by 2,3
 
+
+select * from PortfolioProject..CovidVaccinations
 
 -- Using CTE to perform Calculation on Partition By in previous query
 
@@ -155,8 +157,11 @@ From #PercentPopulationVaccinated
 
 
 
--- Creating View to store data for later visualizations
+-- drop the view if it is existed with this name 
+drop view PercentPopulationVaccinated
 
+
+-- Creating View to store data for later visualizations
 Create View PercentPopulationVaccinated as
 Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CONVERT(int,vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
